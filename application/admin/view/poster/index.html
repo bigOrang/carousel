@@ -1,0 +1,204 @@
+{extend name="common/base"/}
+{block name="link"}
+<link href="__STATIC__/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+{/block}
+{block name="style"}
+<style>
+    #special-search-box .form-group{
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+</style>
+{/block}
+{block name="body"}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="example-wrap">
+                <h4 class="example-title">媒体信息</h4>
+                <div class="example">
+                    <form class="form-horizontal" id="advanced-search-box" style="display: none;">
+                        <div class="row">
+                            <div class="form-group col-md-3">
+                                <label class="col-sm-4 control-label">媒体类型</label>
+                                <div class="col-sm-8">
+                                    <select name="type" class="form-control" onchange="advancedSearch(this)">
+                                        <option value="">全部</option>
+                                        <option value="0">轮播</option>
+                                        <option value="1">通知</option>
+                                        <option value="3">广告</option>
+                                        <option value="4">人脸</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="col-sm-4 control-label">是否置顶</label>
+                                <div class="col-sm-8">
+                                    <select name="is_top" class="form-control" onchange="advancedSearch(this)">
+                                        <option value="">全部</option>
+                                        <option value="1">置顶</option>
+                                        <option value="0">非置顶</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="col-sm-4 control-label">是否启用</label>
+                                <div class="col-sm-8">
+                                    <select name="enable" class="form-control" onchange="advancedSearch(this)">
+                                        <option value="">全部</option>
+                                        <option value="1">已启用</option>
+                                        <option value="0">未启用</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" onclick="advancedSearch()" class="btn btn-primary btn-sm">提交</button>
+                                <button type="reset" class="btn btn-default btn-sm">重置</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="toolbar" class="btn-group">
+                        <button type="button" class="btn btn-outline btn-default" onclick="dialog('新增', '{:url(\'poster/add\')}', 800, 550)">
+                            <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-default" id="delete-row" disabled>
+                            <i class="glyphicon glyphicon-trash" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-default" onclick="window.location='{:url(\'device/index\')}'">
+                            <i class="glyphicon glyphicon-chevron-right" aria-hidden="true"></i>
+                            <span>设备维护</span>
+                        </button>
+                    </div>
+                    <div class="columns-right pull-right" style="margin-top:10px;margin-bottom:10px;">
+                        <button class="btn btn-default btn-outline" id="advanced-search"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                data-original-title="高级搜索"
+                        ><i class="fa fa-search"></i></button>
+                    </div>
+                    <table id="grid"  data-toggle="table" class="table-bordered ">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+{block name="script"}
+<script>
+    var flg = true;
+    var searchTip = '请输入媒体信息标题';
+    var columns = [{
+        checkbox: true,
+        visible: true                  //是否显示复选框
+    },{
+        field: 'id',
+        title: '序号',
+        sortable: false
+    }, {
+        field: 'title',
+        title: '标题描述',
+        sortable: false
+    }, {
+        field: 'type',
+        title: '类型',
+        sortable: false,
+        formatter: function(value,row,index) {
+            var val;
+            if (value == 0)
+                val = '轮播';
+            else if (value == 1)
+                val = '通知'
+            else if (value == 2)
+                val = '广告'
+            else
+                val = '人脸'
+            return val;
+        }
+    }, {
+        field: 'enable',
+        title: '是否启用',
+        sortable: false,
+        formatter: function(value,row,index) {
+            return value == 1 ? '启用' : '不启用';
+        }
+    }, {
+        field: 'is_top',
+        title: '是否置顶',
+        sortable: false,
+        formatter: function(value,row,index) {
+            return value == 1 ? '置顶' : '不置顶';
+        }
+    },{
+        field: 'on_date',
+        title: '开始日期',
+        sortable: false
+    }, {
+        field: 'off_date',
+        title: '结束日期',
+        sortable: false
+    }, {
+        field: 'on_time',
+        title: '开始时间',
+        sortable: false
+    }, {
+        field: 'off_time',
+        title: '结束时间',
+        sortable: false
+    }, {
+        field: 'do',
+        title: '操作',
+        formatter: function(value,row,index) {
+            var e = "<a onclick=editJump(" + row.id +")>编辑</a>&emsp;";
+                e += "<a onclick='deleteJump(" + row.id +")'>删除</a>&emsp;";
+            return e;
+        }
+    }];
+    var table = new BSTable('grid', "{:url('poster/index')}", columns, searchTip);
+    table.setPaginationType('server');
+    table.init();
+
+    function editJump(id) {
+        var url = "{:url('poster/edit',array('id'=>'P_id'))}";
+        url =  url.replace("P_id",id);
+        dialog('编辑', url, 800, 550);
+    }
+    function deleteJump(id) {
+        var url = "{:url('poster/delete')}";
+        ajaxToDelete(url, id)
+    }
+
+    function choiceDevice(id) {
+        var url = "{:url('device/index',array('id'=>'P_id'))}";
+        url =  url.replace("P_id",id);
+        // window.location = url;
+        dialog('选择设备', url, 800, 450);
+    }
+
+    $('#advanced-search').on('click', function () {
+        if (flg === true) {
+            $('#advanced-search-box').show();
+            flg = false;
+        } else {
+            $('#advanced-search-box').hide();
+            flg = true;
+        }
+    });
+
+    //自定义搜索
+    function advancedSearch(obj, is_search) {
+        var params = {query:{}};
+        if ('undefined' == typeof obj) {
+            formData = $('form').serializeObject()
+            params['query'] = formData;
+        } else {
+            var obj_name = obj.name;
+            params['query'][obj_name] = $(obj).val();
+        }
+        table.refresh(params)
+    }
+    removeAll('grid', 'delete-row', "{:url('device/delete')}");
+</script>
+{/block}

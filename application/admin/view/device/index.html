@@ -1,0 +1,147 @@
+{extend name="common/base"/}
+{block name="link"}
+<link href="__STATIC__/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+{/block}
+{block name="style"}
+<style>
+    #special-search-box .form-group{
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+</style>
+{/block}
+{block name="body"}
+
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="example-wrap">
+                <h4 class="example-title">媒体信息</h4>
+                <div class="example">
+                    <form class="form-horizontal" id="advanced-search-box" style="display: none;">
+                        <div class="row">
+                            <div class="form-group col-md-3">
+                                <label class="col-sm-4 control-label">设备类型</label>
+                                <div class="col-sm-8">
+                                    <select name="dev_type" class="form-control" onchange="advancedSearch(this)">
+                                        <option value="">全部</option>
+                                        {foreach $dev_type as $key=>$vo}
+                                        <option value="{$vo.dev_type}">{$vo.remark}</option>
+                                        {/foreach}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" onclick="advancedSearch()" class="btn btn-primary btn-sm">提交</button>
+                                <button type="reset" class="btn btn-default btn-sm">重置</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="toolbar" class="btn-group">
+                        <button type="button" class="btn btn-outline btn-default" onclick="dialog('新增', '{:url(\'device/add\')}', 800, 450)">
+                            <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-default" id="delete-row" disabled>
+                            <i class="glyphicon glyphicon-trash" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-default" onclick="window.location='{:url(\'poster/index\')}'">
+                            <i class="glyphicon glyphicon-chevron-left" aria-hidden="true"></i>
+                            <span>返回媒体信息</span>
+                        </button>
+                    </div>
+                    <div class="columns-right pull-right" style="margin-top:10px;margin-bottom:10px;">
+                        <button class="btn btn-default btn-outline" id="advanced-search"
+                                data-toggle="tooltip"
+                                data-placement="top"
+                                data-original-title="高级搜索"
+                        ><i class="fa fa-search"></i></button>
+                    </div>
+                    <table id="grid"  data-toggle="table" class="table-bordered ">
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+{block name="script"}
+<script>
+    var flg = true;
+    var searchTip = '请输入设备名称';
+    var columns = [{
+        checkbox: true,
+        visible: true                  //是否显示复选框
+    }, {
+        field: 'id',
+        title: '序号',
+        sortable: false
+    }, {
+        field: 'dev_name',
+        title: '标题描述',
+        sortable: false
+    }, {
+        field: 'dev_type_name',
+        title: '设备类型',
+        sortable: false
+    }, {
+        field: 'dev_code',
+        title: 'mac地址',
+        sortable: false
+    }, {
+        field: 'location',
+        title: '设备地址',
+        sortable: false
+    },{
+        field: 'status',
+        title: '是否启用',
+        sortable: false,
+        formatter: function(value,row,index) {
+            return value == 1 ? '启用' : '未启用';
+        }
+    },{
+        field: 'do',
+        title: '操作',
+        formatter: function(value,row,index) {
+            var e = "<a onclick=editJump(" + row.id +")>编辑</a>&emsp;";
+            e += "<a onclick='deleteJump(" + row.id +")'>删除</a>&emsp;";
+            return e;
+        }
+    }];
+    var table = new BSTable('grid', "{:url('device/index')}", columns, searchTip);
+    table.setPaginationType('server');
+    table.init();
+
+    $('#advanced-search').on('click', function () {
+        if (flg === true) {
+            $('#advanced-search-box').show();
+            flg = false;
+        } else {
+            $('#advanced-search-box').hide();
+            flg = true;
+        }
+    });
+    function editJump(id) {
+        var url = "{:url('device/edit',array('id'=>'P_id'))}";
+        url =  url.replace("P_id",id);
+        dialog('编辑', url, 800, 550);
+    }
+    function deleteJump(id) {
+        var url = "{:url('device/delete')}";
+        ajaxToDelete(url, id)
+    }
+    //自定义搜索
+    function advancedSearch(obj) {
+        var params = {query:{}};
+        if ('undefined' == typeof obj) {
+            formData = $('form').serializeObject()
+            params['query'] = formData;
+        } else {
+            var obj_name = obj.name;
+            params['query'][obj_name] = $(obj).val();
+        }
+        table.refresh(params)
+    }
+    removeAll('grid', 'delete-row', "{:url('device/delete')}");
+</script>
+{/block}
